@@ -36,20 +36,20 @@ export default function Sidebar() {
         {/* Logo and Title */}
        <div className="flex flex-col gap-2 p-4">
   {/* Logo and Title */}
-  <div className="flex flex-col items-start ">
-    <img
-      src="/zicon.webp"
-      alt="Logo"
-      className="w-25 h-18 object-contain"
-    />
-    <Link
-      href="/"
-      className="font-semibold tracking-tight text-lg text-pretty text-foreground"
-    >
-      Asset Credibility Dashboard
-    </Link>
-    
-  </div>
+ <div className="flex flex-col items-start">
+  <img
+    src="/zicon-logoo.jpg"
+    alt="Logo"
+    className="w-[120px] h-auto object-contain"
+  />
+  <Link
+    href="/"
+    className="font-semibold tracking-tight text-lg text-pretty text-foreground"
+  >
+    Asset Credibility Dashboard
+  </Link>
+</div>
+
 </div>
 
 

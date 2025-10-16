@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -369,14 +369,7 @@ export function AssetDetailView({ assetType, assetId, onBack }) {
             <div className="h-8 w-px bg-gray-300 dark:bg-gray-600" />
             <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{asset.name}</h1>
           </div>
-          <Image
-            src="/logo.png"
-            alt="SABZA Logo"
-            width={40}
-            height={40}
-            className="object-contain"
-            unoptimized
-          />
+         
         </div>
       </div>
 

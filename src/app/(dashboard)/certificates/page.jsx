@@ -132,263 +132,246 @@ export default function Page() {
     router.push(`/certificates/${cert._id}`)
   }
 
-  const handleDownloadPDF = async (certificateId) => {
-    const certificate = certificates.find(cert => cert._id === certificateId)
-    if (!certificate) {
-      alert("Certificate not found")
-      return
+ const handleDownloadPDF = async (certificateId) => {
+  const certificate = certificates.find(cert => cert._id === certificateId)
+  if (!certificate) {
+    alert("Certificate not found")
+    return
+  }
+
+  try {
+    console.log("Starting PDF generation...")
+
+    // Create PDF - A4 size portrait
+    const pdf = new jsPDF("portrait", "mm", "a4")
+
+    // Set up dimensions
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 15
+    const contentWidth = pageWidth - (margin * 2)
+
+    // Add background gradient (light green) matching Certificate Card
+    pdf.setFillColor(249, 255, 251) // #F9FFFB
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+
+    // Add border (light green) matching Certificate Card
+    pdf.setDrawColor(223, 242, 225) // #DFF2E1
+    pdf.setLineWidth(1)
+    pdf.rect(margin, margin, contentWidth, pageHeight - (margin * 2))
+
+    // Logo - Top Right (matching Certificate Card)
+    try {
+      let logoResponse = await fetch('/logo.jpg')
+      if (!logoResponse.ok) {
+        logoResponse = await fetch('/logo.png')
+      }
+
+      if (logoResponse.ok) {
+        const logoBlob = await logoResponse.blob()
+        const logoDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.readAsDataURL(logoBlob)
+        })
+
+        const logoWidth = 15
+        const logoHeight = 13
+        // ✅ Moved slightly to the left
+        pdf.addImage(logoDataUrl, 'PNG', pageWidth - margin - logoWidth - 5, margin + 15, logoWidth, logoHeight)
+      } else {
+        throw new Error('Logo not found')
+      }
+    } catch (logoError) {
+      console.warn("Could not load logo, using fallback:", logoError)
+      // Fallback logo
+      const logoWidth = 30
+      const logoHeight = 30
+      pdf.setFillColor(16, 138, 72)
+      pdf.rect(pageWidth - margin - logoWidth - 5, margin + 8, logoWidth, logoHeight, 'F')
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFontSize(8)
+      pdf.setFont(undefined, 'bold')
+      pdf.text('SABZA', pageWidth - margin - logoWidth + 2 - 5, margin + 20)
     }
 
+    // Verification Badge - Centered (matching Certificate Card)
     try {
-      console.log("Starting PDF generation...")
-      
-      // Create PDF - A4 size portrait
-      const pdf = new jsPDF("portrait", "mm", "a4")
-      
-      // Set up dimensions
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 15
-      const contentWidth = pageWidth - (margin * 2)
-      
-      // Add background gradient (light green) matching Certificate Card
-      pdf.setFillColor(249, 255, 251) // #F9FFFB
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      
-      // Add border (light green) matching Certificate Card
-      pdf.setDrawColor(223, 242, 225) // #DFF2E1
-      pdf.setLineWidth(1)
-      pdf.rect(margin, margin, contentWidth, pageHeight - (margin * 2))
-      
-      // Logo - Top Right (matching Certificate Card)
-      try {
-        let logoResponse = await fetch('/logo.jpg')
-        if (!logoResponse.ok) {
-          logoResponse = await fetch('/logo.png')
-        }
-        
-        if (logoResponse.ok) {
-          const logoBlob = await logoResponse.blob()
-          const logoDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result)
-            reader.readAsDataURL(logoBlob)
-          })
-          
-          const logoWidth = 15
-          const logoHeight = 13
-          pdf.addImage(logoDataUrl, 'PNG', pageWidth - margin - logoWidth, margin + 15, logoWidth, logoHeight)
-        } else {
-          throw new Error('Logo not found')
-        }
-      } catch (logoError) {
-        console.warn("Could not load logo, using fallback:", logoError)
-        // Fallback logo
-        const logoWidth = 30
-        const logoHeight = 30
-        pdf.setFillColor(16, 138, 72)
-        pdf.rect(pageWidth - margin - logoWidth, margin + 8, logoWidth, logoHeight, 'F')
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFontSize(8)
-        pdf.setFont(undefined, 'bold')
-        pdf.text('SABZA', pageWidth - margin - logoWidth + 2, margin + 20)
+      const verifyResponse = await fetch('/sabza-verify.png')
+
+      if (verifyResponse.ok) {
+        const verifyBlob = await verifyResponse.blob()
+        const verifyDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.readAsDataURL(verifyBlob)
+        })
+
+        const verifySize = 15
+        const verifyY = margin + 35
+        pdf.addImage(verifyDataUrl, 'PNG', (pageWidth / 2) - (verifySize / 2), verifyY, verifySize, verifySize)
+      } else {
+        throw new Error('Verify image not found')
       }
-      
-      // Verification Badge - Centered (matching Certificate Card)
-      try {
-        const verifyResponse = await fetch('/sabza-verify.png')
-        
-        if (verifyResponse.ok) {
-          const verifyBlob = await verifyResponse.blob()
-          const verifyDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result)
-            reader.readAsDataURL(verifyBlob)
-          })
-          
-          const verifySize = 15
-          const verifyY = margin + 35
-          pdf.addImage(verifyDataUrl, 'PNG', (pageWidth / 2) - (verifySize / 2), verifyY, verifySize, verifySize)
-        } else {
-          throw new Error('Verify image not found')
-        }
-      } catch (verifyError) {
-        console.warn("Could not load verification badge, using fallback:", verifyError)
-        // Fallback verification badge
-        const verifyY = margin + 40
-        const verifyRadius = 6
-        
-        pdf.setFillColor(16, 138, 72)
-        pdf.circle(pageWidth / 2, verifyY, verifyRadius, 'F')
-        
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFontSize(12)
-        pdf.setFont(undefined, 'bold')
-        pdf.text('✓', pageWidth / 2 - 2, verifyY + 3)
-      }
-      
-      // Title (matching Certificate Card)
-      pdf.setTextColor(6, 62, 36) // #063E24
-      pdf.setFontSize(18)
-      pdf.setFont(undefined, 'bold')
-      const title = 'Certificate of Retirement (Validated Carbon Units)'
-      pdf.text(title, pageWidth / 2, margin + 70, { align: 'center', maxWidth: contentWidth - 10 })
-      
-      // Description - Line by line (matching Certificate Card)
-      pdf.setTextColor(102, 102, 102) // Gray
+    } catch (verifyError) {
+      console.warn("Could not load verification badge, using fallback:", verifyError)
+      // Fallback verification badge
+      const verifyY = margin + 40
+      const verifyRadius = 6
+
+      pdf.setFillColor(16, 138, 72)
+      pdf.circle(pageWidth / 2, verifyY, verifyRadius, 'F')
+
+      pdf.setTextColor(255, 255, 255)
       pdf.setFontSize(12)
-      pdf.setFont(undefined, 'normal')
-      
-      let descY = margin + 83
-      pdf.text('SABZA, in its capacity as administrator of the', pageWidth / 2, descY, { align: 'center' })
-      
-      descY += 6
       pdf.setFont(undefined, 'bold')
-      pdf.text('SABZA Carbon Notary', pageWidth / 2, descY, { align: 'center' })
-      
-      descY += 6
-      pdf.setFont(undefined, 'normal')
-      pdf.text(', does hereby certify that', pageWidth / 2, descY, { align: 'center' })
-      
-      // Quantity - Bold and Green (matching Certificate Card)
-      descY += 10
-      pdf.setTextColor(16, 138, 72) // Green
-      pdf.setFontSize(15)
-      pdf.setFont(undefined, 'bold')
-      const quantityText = `${certificate.quantityRetired} Verified SABZA Carbon Unit${certificate.quantityRetired > 1 ? 's' : ''} (VCU${certificate.quantityRetired > 1 ? 's' : ''})`
-      pdf.text(quantityText, pageWidth / 2, descY, { align: 'center', maxWidth: contentWidth - 10 })
-      
-      // "were/was retired on behalf of" (matching Certificate Card)
-      descY += 10
-      pdf.setTextColor(102, 102, 102) // Gray
-      pdf.setFontSize(12)
-      pdf.setFont(undefined, 'normal')
-      pdf.text(`${certificate.quantityRetired > 1 ? 'were' : 'was'} retired on behalf of:`, pageWidth / 2, descY, { align: 'center' })
-      
-      // Beneficial Owner - Green and Bold (matching Certificate Card)
-      descY += 12
-      pdf.setTextColor(16, 138, 72) // Green
-      pdf.setFontSize(16)
-      pdf.setFont(undefined, 'bold')
-      pdf.text(certificate.beneficialOwner, pageWidth / 2, descY, { align: 'center' })
-      
-      // Date of Retirement (matching Certificate Card)
-      descY += 10
-      pdf.setTextColor(102, 102, 102) // Gray
-      pdf.setFontSize(11)
-      pdf.setFont(undefined, 'italic')
-      pdf.text(`Date of Retirement: ${certificate.dateOfRetirement}`, pageWidth / 2, descY, { align: 'center' })
-      
-      // Details Box (matching Certificate Card)
-      const boxY = descY + 10
-      const boxHeight = 65
-      const boxPadding = 5
-      
-      // White background
-      pdf.setFillColor(255, 255, 255)
-      pdf.rect(margin + boxPadding, boxY, contentWidth - (boxPadding * 2), boxHeight, 'F')
-      
-      // Light green border
-      pdf.setDrawColor(233, 248, 238) // #E9F8EE
-      pdf.setLineWidth(0.5)
-      pdf.rect(margin + boxPadding, boxY, contentWidth - (boxPadding * 2), boxHeight)
-      
-      // Details content - Two columns (matching Certificate Card grid layout)
-      const leftX = margin + boxPadding + 5
-      const rightX = pageWidth / 2 + 5
-      let leftY = boxY + 8
-      let rightY = boxY + 8
-      const lineSpacing = 10
-      
-      // Helper function to add detail row
-      const addDetail = (x, y, label, value) => {
-        pdf.setTextColor(16, 138, 72) // Green
-        pdf.setFontSize(10)
-        pdf.setFont(undefined, 'bold')
-        pdf.text(label, x, y)
-        
-        pdf.setTextColor(51, 51, 51) // Dark gray
-        pdf.setFont(undefined, 'normal')
-        const valueText = value.length > 28 ? value.substring(0, 28) + '...' : value
-        pdf.text(valueText, x, y + 4)
-        
-        return y + lineSpacing
-      }
-      
-      // Left column
-      leftY = addDetail(leftX, leftY, 'Project Name:', certificate.projectName)
-      leftY = addDetail(leftX, leftY, 'Project ID:', certificate.proID || "—")
-      leftY = addDetail(leftX, leftY, 'Serial Number:', certificate.serialNumber)
-      
-      // Right column
-      rightY = addDetail(rightX, rightY, 'Blockchain Hash:', certificate.txHash)
-      rightY = addDetail(rightX, rightY, 'Additional Certifications:', certificate.registry || "—")
-      rightY = addDetail(rightX, rightY, 'Reason:', certificate.reason || "—")
-      
-      // Credibility Score Section (matching Certificate Card)
-      if (certificate.credibilityScore !== undefined) {
-        const scoreY = boxY + boxHeight + 8
-        
-        pdf.setTextColor(16, 138, 72) // Green
-        pdf.setFontSize(10)
-        pdf.setFont(undefined, 'bold')
-        pdf.text('Credibility Score:', leftX, scoreY)
-        
-        // Draw stars (matching StarRating component logic)
-        const getStarCount = (score) => {
-          if (score >= 80) return 5
-          if (score >= 60) return 4
-          if (score >= 40) return 3
-          if (score >= 20) return 2
-          if (score >= 0) return 1
-          return 0
-        }
-        
-        const starCount = getStarCount(certificate.credibilityScore)
-        const starSize = 2
-        const starSpacing = 3
-        const starStartX = leftX + 35
-        const starY = scoreY - 1
-        
-        // Draw 5 stars matching StarRating component style
-        for (let i = 0; i < 5; i++) {
-          const x = starStartX + (i * starSpacing)
-          const y = starY
-          const size = 2
-          
-          if (i < starCount) {
-            // Filled star - yellow (matching fill-yellow-400)
-            pdf.setFillColor(250, 204, 21) // yellow-400 equivalent
-            pdf.circle(x, y, size, 'F')
-          } else {
-            // Empty star - light gray (matching fill-gray-200)
-            pdf.setFillColor(229, 231, 235) // gray-200 equivalent
-            pdf.circle(x, y, size, 'F')
-          }
-        }
-        
-        // Score percentage
-        pdf.setTextColor(102, 102, 102) // Gray
-        pdf.setFont(undefined, 'normal')
-        pdf.text(`${certificate.credibilityScore}%`, starStartX + 18, scoreY)
-      }
-      
-      // Footer (matching Certificate Card)
-      pdf.setTextColor(153, 153, 153) // Light gray
-      pdf.setFontSize(9)
-      pdf.setFont(undefined, 'italic')
-      pdf.text('Powered by ZiCON Cloud', pageWidth - margin - 5, pageHeight - margin - 5, { align: 'right' })
-      
-      // Save PDF
-      pdf.save(`certificate_${certificate.serialNumber}.pdf`)
-      
-      console.log("PDF generated successfully!")
-      
-    } catch (err) {
-      console.error("Error generating PDF:", err)
-      alert(`Failed to generate PDF: ${err.message}`)
+      pdf.text('✓', pageWidth / 2 - 2, verifyY + 3)
     }
+
+    // Title (matching Certificate Card)
+    pdf.setTextColor(6, 62, 36) // #063E24
+    pdf.setFontSize(18)
+    pdf.setFont(undefined, 'bold')
+    const title = 'Certificate of Retirement (Validated Carbon Units)'
+    pdf.text(title, pageWidth / 2, margin + 70, { align: 'center', maxWidth: contentWidth - 10 })
+
+    // Description - Line by line (matching Certificate Card)
+    pdf.setTextColor(102, 102, 102) // Gray
+    pdf.setFontSize(12)
+    pdf.setFont(undefined, 'normal')
+
+    let descY = margin + 83
+    pdf.text('SABZA, in its capacity as administrator of the', pageWidth / 2, descY, { align: 'center' })
+
+    descY += 6
+    pdf.setFont(undefined, 'bold')
+    pdf.text('SABZA Carbon Notary', pageWidth / 2, descY, { align: 'center' })
+
+    descY += 6
+    pdf.setFont(undefined, 'normal')
+    pdf.text(', does hereby certify that', pageWidth / 2, descY, { align: 'center' })
+
+    // Quantity - Bold and Green (matching Certificate Card)
+    descY += 10
+    pdf.setTextColor(16, 138, 72) // Green
+    pdf.setFontSize(15)
+    pdf.setFont(undefined, 'bold')
+    const quantityText = `${certificate.quantityRetired} Verified SABZA Carbon Unit${certificate.quantityRetired > 1 ? 's' : ''} (VCU${certificate.quantityRetired > 1 ? 's' : ''})`
+    pdf.text(quantityText, pageWidth / 2, descY, { align: 'center', maxWidth: contentWidth - 10 })
+
+    // "were/was retired on behalf of" (matching Certificate Card)
+    descY += 10
+    pdf.setTextColor(102, 102, 102) // Gray
+    pdf.setFontSize(12)
+    pdf.setFont(undefined, 'normal')
+    pdf.text(`${certificate.quantityRetired > 1 ? 'were' : 'was'} retired on behalf of:`, pageWidth / 2, descY, { align: 'center' })
+
+    // Beneficial Owner - Green and Bold (matching Certificate Card)
+    descY += 12
+    pdf.setTextColor(16, 138, 72) // Green
+    pdf.setFontSize(16)
+    pdf.setFont(undefined, 'bold')
+    pdf.text(certificate.beneficialOwner, pageWidth / 2, descY, { align: 'center' })
+
+    // Date of Retirement (matching Certificate Card)
+    descY += 10
+    pdf.setTextColor(102, 102, 102) // Gray
+    pdf.setFontSize(11)
+    pdf.setFont(undefined, 'italic')
+    pdf.text(`Date of Retirement: ${certificate.dateOfRetirement}`, pageWidth / 2, descY, { align: 'center' })
+
+    // Details Box (matching Certificate Card)
+    const boxY = descY + 10
+    const boxHeight = 65
+    const boxPadding = 5
+
+    // White background
+    pdf.setFillColor(255, 255, 255)
+    pdf.rect(margin + boxPadding, boxY, contentWidth - (boxPadding * 2), boxHeight, 'F')
+
+    // Light green border
+    pdf.setDrawColor(233, 248, 238) // #E9F8EE
+    pdf.setLineWidth(0.5)
+    pdf.rect(margin + boxPadding, boxY, contentWidth - (boxPadding * 2), boxHeight)
+
+    // Details content - Two columns
+    const leftX = margin + boxPadding + 5
+    const rightX = pageWidth / 2 + 5
+    let leftY = boxY + 8
+    let rightY = boxY + 8
+    const lineSpacing = 10
+
+    const addDetail = (x, y, label, value) => {
+      pdf.setTextColor(16, 138, 72)
+      pdf.setFontSize(10)
+      pdf.setFont(undefined, 'bold')
+      pdf.text(label, x, y)
+
+      pdf.setTextColor(51, 51, 51)
+      pdf.setFont(undefined, 'normal')
+      const valueText = value.length > 28 ? value.substring(0, 28) + '...' : value
+      pdf.text(valueText, x, y + 4)
+
+      return y + lineSpacing
+    }
+
+    // Left column
+    leftY = addDetail(leftX, leftY, 'Project Name:', certificate.projectName)
+    leftY = addDetail(leftX, leftY, 'Project ID:', certificate.proID || "—")
+    leftY = addDetail(leftX, leftY, 'Serial Number:', certificate.serialNumber)
+
+    // Right column
+    rightY = addDetail(rightX, rightY, 'Blockchain Hash:', certificate.txHash)
+    rightY = addDetail(rightX, rightY, 'Additional Certifications:', certificate.registry || "—")
+    rightY = addDetail(rightX, rightY, 'Reason:', certificate.reason || "—")
+
+    // ✅ Credibility Score Section (now with bar instead of circles)
+    if (certificate.credibilityScore !== undefined) {
+      const scoreY = boxY + boxHeight + 8
+
+      pdf.setTextColor(16, 138, 72)
+      pdf.setFontSize(10)
+      pdf.setFont(undefined, 'bold')
+      pdf.text('Credibility Score:', leftX, scoreY)
+
+      // Progress bar
+      const barX = leftX + 35
+      const barY = scoreY - 3
+      const barWidth = 40
+      const barHeight = 4
+
+      // Outline (gray)
+      pdf.setDrawColor(200, 200, 200)
+      pdf.setFillColor(229, 231, 235)
+      pdf.rect(barX, barY, barWidth, barHeight, 'F')
+
+      // Filled part (green)
+      const fillWidth = (certificate.credibilityScore / 100) * barWidth
+      pdf.setFillColor(16, 138, 72)
+      pdf.rect(barX, barY, fillWidth, barHeight, 'F')
+
+      // Percentage text
+      pdf.setTextColor(102, 102, 102)
+      pdf.setFont(undefined, 'normal')
+      pdf.text(`${certificate.credibilityScore}%`, barX + barWidth + 5, scoreY)
+    }
+
+    // Footer
+    pdf.setTextColor(153, 153, 153)
+    pdf.setFontSize(9)
+    pdf.setFont(undefined, 'italic')
+    pdf.text('Powered by ZiCON Cloud', pageWidth - margin - 5, pageHeight - margin - 5, { align: 'right' })
+
+    // Save PDF
+    pdf.save(`certificate_${certificate.serialNumber}.pdf`)
+
+    console.log("PDF generated successfully!")
+
+  } catch (err) {
+    console.error("Error generating PDF:", err)
+    alert(`Failed to generate PDF: ${err.message}`)
   }
+}
 
   return (
     <div className="space-y-4 sm:space-y-6">
