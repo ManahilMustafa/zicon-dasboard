@@ -36,15 +36,15 @@ export default function Sidebar() {
         {/* Logo and Title */}
        <div className="flex flex-col gap-2 p-4">
   {/* Logo and Title */}
- <div className="flex flex-col items-start">
+ <div className="flex flex-col items-start justify-start p-0 m-0 ">
   <img
     src="/zicon-logoo.jpg"
     alt="Logo"
-    className="w-[120px] h-auto object-contain"
+    className="w-[120px] h-auto object-contain mb-1"
   />
   <Link
     href="/"
-    className="font-semibold tracking-tight text-lg text-pretty text-foreground"
+    className="font-semibold tracking-tight text-lg text-pretty text-foreground leading-none"
   >
     Asset Credibility Dashboard
   </Link>
