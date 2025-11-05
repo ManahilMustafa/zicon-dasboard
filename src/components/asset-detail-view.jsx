@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Upload, Download, CheckCircle, AlertTriangle, Clock, Shield } from "lucide-react";
+import { ArrowLeft, Upload, Download, CheckCircle, AlertTriangle, Clock, Info } from "lucide-react";
 import { CredibilityScore } from "./credibility-score";
 import { StarRating } from "./star-rating";
 import jsPDF from "jspdf";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 // Mock data for different asset types
 const mockAssetData = {
@@ -459,90 +460,105 @@ export function AssetDetailView({ assetType, assetId, onBack }) {
 
             {/* Analysis Results */}
             {analysisComplete && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analysis Results</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Risk Level Gauge */}
-                  <div className="text-center">
-                    <div className="relative inline-block">
-                      <div className="w-32 h-16 bg-gray-200 dark:bg-gray-700 rounded-t-full relative overflow-hidden">
-                        <div 
-                          className="absolute bottom-0 left-0 h-full bg-red-500 dark:bg-red-400 transition-all duration-1000"
-                          style={{ width: `${asset.anomalyScore * 100}%` }}
-                        />
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                          {asset.riskLevel}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Risk Level</p>
-                  </div>
+       <Card className="relative">
+  {/* Info Icon */}
+  <Popover>
+    <PopoverTrigger asChild>
+      <div className="absolute top-3 right-3 cursor-pointer text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        <Info className="w-4 h-4" />
+      </div>
+    </PopoverTrigger>
+    <PopoverContent className="w-64 text-sm">
+      This report evaluates anomaly score, risk level, and deviations
+      from normal baselines using machine learning on extracted features.
+    </PopoverContent>
+  </Popover>
 
-                  {/* Anomaly Score */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-                      {asset.anomalyScore}
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Anomaly Score</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">Based on {asset.features.length} extracted features</p>
-                    <Button 
-                      className="mt-2" 
-                      size="sm" 
-                      onClick={downloadReport}
-                      disabled={isDownloading}
-                    >
-                      {isDownloading ? (
-                        <>
-                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          Download report
-                        </>
-                      )}
-                    </Button>
-                  </div>
+  <CardHeader>
+    <CardTitle>Analysis Results</CardTitle>
+  </CardHeader>
 
-                  {/* Feature Deviations */}
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Feature Deviations from Normal Baseline</h4>
-                    <div className="space-y-3">
-                      {asset.features.map((feature, index) => (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-900 dark:text-gray-100">{feature.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                            <span className={`font-mono ${feature.deviation.startsWith('+') ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
-                              {feature.deviation}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                feature.deviation.startsWith('+') ? 'bg-blue-500 dark:bg-blue-400' : 'bg-red-500 dark:bg-red-400'
-                              }`}
-                              style={{ 
-                                width: `${Math.min(Math.abs(parseFloat(feature.deviation)) * 25, 100)}%`,
-                                marginLeft: feature.deviation.startsWith('+') ? '50%' : `${50 - Math.min(Math.abs(parseFloat(feature.deviation)) * 25, 50)}%`
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      <span>-4</span>
-                      <span>0</span>
-                      <span>+4</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+  <CardContent className="space-y-6">
+    {/* Risk Level Gauge */}
+    <div className="text-center">
+      <div className="relative inline-block">
+        <div className="w-32 h-16 bg-gray-200 dark:bg-gray-700 rounded-t-full relative overflow-hidden">
+          <div 
+            className="absolute bottom-0 left-0 h-full bg-red-500 dark:bg-red-400 transition-all duration-1000"
+            style={{ width: `${asset.anomalyScore * 100}%` }}
+          />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-bold text-red-600 dark:text-red-400">
+            {asset.riskLevel}
+          </span>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Risk Level</p>
+    </div>
+
+    {/* Anomaly Score */}
+    <div className="text-center">
+      <div className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+        {asset.anomalyScore}
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Anomaly Score</p>
+      <p className="text-xs text-gray-500 dark:text-gray-500">Based on {asset.features.length} extracted features</p>
+      <Button 
+        className="mt-2" 
+        size="sm" 
+        onClick={downloadReport}
+        disabled={isDownloading}
+      >
+        {isDownloading ? (
+          <>
+            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Download className="w-4 h-4 mr-2" />
+            Download report
+          </>
+        )}
+      </Button>
+    </div>
+
+    {/* Feature Deviations */}
+    <div>
+      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Feature Deviations from Normal Baseline</h4>
+      <div className="space-y-3">
+        {asset.features.map((feature, index) => (
+          <div key={index} className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-900 dark:text-gray-100">{feature.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+              <span className={`font-mono ${feature.deviation.startsWith('+') ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+                {feature.deviation}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  feature.deviation.startsWith('+') ? 'bg-blue-500 dark:bg-blue-400' : 'bg-red-500 dark:bg-red-400'
+                }`}
+                style={{ 
+                  width: `${Math.min(Math.abs(parseFloat(feature.deviation)) * 25, 100)}%`,
+                  marginLeft: feature.deviation.startsWith('+') ? '50%' : `${50 - Math.min(Math.abs(parseFloat(feature.deviation)) * 25, 50)}%`
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+        <span>-4</span>
+        <span>0</span>
+        <span>+4</span>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
             )}
           </div>
 
@@ -740,7 +756,29 @@ export function AssetDetailView({ assetType, assetId, onBack }) {
                   </div>
                 </CardContent>
               </Card>
+              
             )}
+            {/* ---- Review Actions ---- */}
+<div className="border-t pt-6 space-y-4">
+  <div className="flex items-center gap-3">
+    <Button variant="default" className="bg-green-600 hover:bg-green-700">Approve</Button>
+    <Button variant="destructive">Reject</Button>
+    <Button variant="outline" className="border-yellow-500 text-yellow-600">Flag for Audit</Button>
+  </div>
+
+  <div className="space-y-2">
+    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      Reviewer Comment
+    </label>
+    <textarea
+      className="w-full border rounded-md p-2 h-24 bg-white dark:bg-gray-900 dark:border-gray-700"
+      placeholder="Write your notes or decision justification..."
+    />
+  </div>
+
+  <Button className="w-full">Submit</Button>
+</div>
+
           </div>
         </div>
       </div>
